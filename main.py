@@ -1,4 +1,3 @@
-
 import os
 import pandas as pd
 import logging
@@ -59,8 +58,8 @@ X = X.apply(pd.to_numeric, errors='coerce').fillna(0)
 X_scaled = scaler.transform(X)
 predictions = model.predict(X_scaled)
 
-# Attach predictions
-new_data["prediction"] = predictions
+# Attach predictions to new_data DataFrame
+new_data["predicted_label"] = predictions
 
 # Write predictions to InfluxDB
 influx = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
@@ -69,7 +68,7 @@ write_api = influx.write_api(write_options=WriteOptions(batch_size=1))
 for _, row in new_data.iterrows():
     point = Point("fan_predictions") \
         .tag("source", "gh-action") \
-        .field("predicted_label", int(row["prediction"])) \
+        .field("predicted_label", int(row["predicted_label"])) \
         .time(row["time stamp"])
     write_api.write(bucket=INFLUX_BUCKET, record=point)
 
@@ -79,3 +78,17 @@ logger.info(f"Wrote {len(new_data)} predictions to InfluxDB.")
 latest = new_data['time stamp'].max()
 with open(last_seen_time_file, "w") as f:
     f.write(str(latest))
+
+# Check if 'predicted_label' column exists in Google Sheets, if not, add it
+headers = sheet.row_values(1)
+if 'predicted_label' not in headers:
+    # Add the 'predicted_label' column to the header row
+    sheet.add_cols(1)  # Adds one new column at the end
+    sheet.update_cell(1, len(headers) + 1, 'predicted_label')  # Update the header
+
+# Update Google Sheet with predicted labels
+for index, row in new_data.iterrows():
+    cell = sheet.find(str(row['time stamp']))
+    if cell:
+        sheet.update_cell(cell.row, len(headers), row['predicted_label'])
+        logger.info(f"Updated row {cell.row} with prediction {row['predicted_label']}")

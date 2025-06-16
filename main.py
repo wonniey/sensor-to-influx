@@ -5,6 +5,7 @@ from datetime import datetime
 from google.oauth2.service_account import Credentials
 import gspread
 import joblib
+import numpy as np
 from fan_state_detector_clustering import FanStateUnsupervisedDetector
 from influxdb_client import InfluxDBClient, Point, WriteOptions
 

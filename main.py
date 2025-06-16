@@ -86,9 +86,46 @@ if 'predicted_label' not in headers:
     sheet.add_cols(1)  # Adds one new column at the end
     sheet.update_cell(1, len(headers) + 1, 'predicted_label')  # Update the header
 
-# Update Google Sheet with predicted labels
-for index, row in new_data.iterrows():
-    cell = sheet.find(str(row['time stamp']))
-    if cell:
-        sheet.update_cell(cell.row, len(headers), row['predicted_label'])
-        logger.info(f"Updated row {cell.row} with prediction {row['predicted_label']}")
+# Batch Update Google Sheet with predicted labels
+def batch_update_predictions(df_new, df_pred, worksheet, col_indices):
+    """Batch update predictions for large datasets."""
+    cells = []
+    
+    for i, row in df_new.iterrows():
+        try:
+            row_index = row.name + 2  # Google Sheets rows are 1-indexed, +2 to skip header
+            
+            # Add all prediction columns to batch update
+            for col_name, col_idx in col_indices.items():
+                if col_name in df_pred.columns:
+                    value = df_pred.loc[i, col_name]
+                    # Convert to JSON-serializable type
+                    serializable_value = convert_to_serializable(value)
+                    cells.append({
+                        'range': f'{gspread.utils.rowcol_to_a1(row_index, col_idx)}',
+                        'values': [[serializable_value]]
+                    })
+        except Exception as e:
+            logger.error(f"Error preparing batch update for row {i}: {str(e)}")
+    
+    if cells:
+        try:
+            worksheet.batch_update(cells)
+            logger.info(f"Batch update completed for {len(cells)//len(col_indices)} predictions.")
+        except Exception as e:
+            logger.error(f"Error in batch update: {str(e)}")
+
+def convert_to_serializable(value):
+    """Convert NumPy types to native Python types for JSON serialization."""
+    if isinstance(value, np.integer):
+        return int(value)
+    elif isinstance(value, np.floating):
+        return float(value)
+    elif pd.isna(value):
+        return ""
+    else:
+        return str(value) if value is not None else ""
+
+# Update Google Sheet with predictions
+batch_update_predictions(new_data, new_data, sheet, {'predicted_label': 1})
+

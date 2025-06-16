@@ -21,7 +21,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install pandas gspread oauth2client joblib influxdb-client scikit-learn shap
+        pip install pandas gspread oauth2client joblib influxdb-client scikit-learn shap matplotlib
 
     - name: Run main.py
       env:

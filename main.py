@@ -40,7 +40,7 @@ except FileNotFoundError:
     last_seen = pd.Timestamp("1970-01-01")
 
 # Fetch data from Google Sheets
-sheet = client.open("EX301 Sensor Data").worksheet("Sheet1")
+sheet = client.open("EX301 Vibration Sensor").worksheet("Data")
 data = sheet.get_all_records()
 df = pd.DataFrame(data)
 df['timestamp'] = pd.to_datetime(df['timestamp'])

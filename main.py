@@ -44,7 +44,7 @@ def preprocess_gsheet_data(df):
     # Convert numeric columns
     numeric_columns = ['battery_value', 'temperature_value', 'x_acc', 'x_displacement', 
                        'x_frq', 'x_speed', 'y_acc', 'y_displacement', 'y_frq', 'y_speed',
-                       'z_acc', 'z_displacement', 'z_frq', 'z_speed', 'rssi', 'snr']
+                       'z_acc', 'z_displacement', 'z_frq', 'z_speed', 'rssi', 'snr', '']
     for col in numeric_columns:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors='coerce')
